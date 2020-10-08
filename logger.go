@@ -3,10 +3,6 @@
 
 package gworker
 
-import (
-	"go.uber.org/zap"
-)
-
 // PanicHandlerFunc is used to handle panics from each worker goroutine.
 // if nil, panics will be thrown out again from worker goroutines.
 //
@@ -23,14 +19,14 @@ import (
 // 	}
 type PanicHandlerFunc func(p interface{})
 
+// Logger represents a gworker Logger.
+type Logger interface {
+	Error(msg string, key string, value interface{})
+}
+
 // NewPanicHandler return the PanicHandler using zap.Logger.
-func NewPanicHandler(logger *zap.Logger) PanicHandlerFunc {
-	return func(p interface{}) {
-		switch p := p.(type) {
-		case error:
-			logger.Named("gworker").Error("handle panic", zap.Error(p))
-		default:
-			logger.Named("gworker").Error("handle panic", zap.Any("panic", p))
-		}
+func NewPanicHandler(logger Logger) PanicHandlerFunc {
+	return func(panicErr interface{}) {
+		logger.Error("handle panic", "error", panicErr)
 	}
 }

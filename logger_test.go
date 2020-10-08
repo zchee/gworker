@@ -30,7 +30,7 @@ func TestNewPanicHandler(t *testing.T) {
 		},
 		"PanicStructType": {
 			panicArg: struct{}{},
-			wantErr:  `{"panic": {}}`,
+			wantErr:  `{"error": {}}`,
 		},
 	}
 	for name, tt := range tests {
@@ -204,8 +204,14 @@ func (lb *LockedBuffer) Stripped() (s string) {
 	return
 }
 
+type testLogger struct{ *zap.Logger }
+
+func (l *testLogger) Error(format string, key string, value interface{}) {
+	l.Logger.Error(format, zap.Any(key, value))
+}
+
 // NewTestZapLogger returns the new zaptest.NewLogger and LockedBuffer.
-func NewTestZapLogger(t *testing.T, lbopts ...LockedBufferOption) (*zap.Logger, *LockedBuffer) {
+func NewTestZapLogger(t *testing.T, lbopts ...LockedBufferOption) (*testLogger, *LockedBuffer) {
 	buf := NewLockedBuffer(lbopts...)
 	opts := []zaptest.LoggerOption{zaptest.WrapOptions(
 		zap.WrapCore(func(zapcore.Core) zapcore.Core {
@@ -224,5 +230,5 @@ func NewTestZapLogger(t *testing.T, lbopts ...LockedBufferOption) (*zap.Logger, 
 		}
 	})
 
-	return logger, buf
+	return &testLogger{logger}, buf
 }
